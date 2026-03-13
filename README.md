@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/vi/thumb/c/cd/Logo_b%C3%A1ch_khoa_tphcm.png/200px-Logo_b%C3%A1ch_khoa_tphcm.png" alt="HCMUT Logo" width="150">
+  <img src="https://pakdd.org/archive/pakdd2015/images/543px-Logo-hcmut.svg.png" alt="HCMUT Logo" width="150">
   
   # HO CHI MINH CITY UNIVERSITY OF TECHNOLOGY
   ## FACULTY OF COMPUTER SCIENCE & ENGINEERING
