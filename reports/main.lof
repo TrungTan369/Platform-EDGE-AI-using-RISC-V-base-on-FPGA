@@ -1,0 +1,20 @@
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces So sánh luồng dữ liệu giữa phép nhân tích lũy (MAC) truyền thống và phép XNOR-Popcount trong BNN.}}{23}{figure.caption.7}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Kiến trúc Pulpissimo}}{25}{figure.caption.8}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Đường cong huấn luyện của mạng ConvNet trên tập dữ liệu CIFAR-10 tùy thuộc vào phương pháp.}}{28}{figure.caption.9}%
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Kiến trúc của MobileNet với các lớp depthwise và pointwise.}}{30}{figure.caption.10}%
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Cấu trúc chi tiết của MobileNetV1}}{31}{figure.caption.11}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Quy trình lượng tử hóa và huấn luyện mạng nơ-ron theo Jacob et al.}}{32}{figure.caption.12}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Kiến trúc hệ thống tổng quan}}{34}{figure.caption.13}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Sơ đồ cấu hình khối Zynq UltraScale+ MPSoC trên Vivado.}}{36}{figure.caption.14}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Sơ đồ khối hệ thống giao tiếp AXI giữa PS và PL.}}{38}{figure.caption.15}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Sơ đồ kiến trúc nội bộ của Phân hệ PULP trên FPGA.}}{41}{figure.caption.17}%
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Sơ đồ khối chức năng chi tiết của bộ tăng tốc CNN (Accelerator Core Architecture).}}{43}{figure.caption.19}%
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Sơ đồ khối tích chập}}{45}{figure.caption.20}%
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Sơ đồ quy trình}}{49}{figure.caption.23}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {6.1}{\ignorespaces Biểu đồ Gantt kế hoạch thực hiện giai đoạn hiện thực}}{57}{figure.caption.25}%
