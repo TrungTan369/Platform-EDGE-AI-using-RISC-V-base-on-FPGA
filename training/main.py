@@ -3,29 +3,25 @@ import kagglehub
 import tensorflow as tf
 import numpy as np
 
-# 1. Tải dataset (hoặc lấy từ cache ~/.cache/...)
+# ==========================================
+# 1. TẢI VÀ CHUẨN BỊ DỮ LIỆU
+# ==========================================
 print("Đang kiểm tra và tải dataset...")
 dataset_base_path = kagglehub.dataset_download("jcoral02/inriaperson")
 print(f"Dataset đã sẵn sàng tại: {dataset_base_path}")
 
-# Lưu ý: Tùy thuộc vào cấu trúc thư mục giải nén của bộ INRIA này, 
-# bạn có thể cần trỏ sâu hơn vào thư mục chứa ảnh train. 
-# Ví dụ: path_to_train = os.path.join(dataset_base_path, 'Train')
-# Tạm thời mình lấy thẳng dataset_base_path, bạn print thư mục ra để check nhé.
 train_dir = dataset_base_path 
 
-# 2. Cài đặt các thông số cho MobileNet (Ưu tiên ảnh nhỏ cho Edge AI)
 BATCH_SIZE = 32
-IMG_SIZE = (128, 128) # Dùng 128x128 hoặc 160x160 thay vì 224x224 để tiết kiệm tài nguyên FPGA
+IMG_SIZE = (128, 128)
 
-# 3. Load data vào tf.data.Dataset
 print("Đang load dữ liệu vào bộ nhớ...")
 train_dataset = tf.keras.utils.image_dataset_from_directory(
     train_dir,
     shuffle=True,
     batch_size=BATCH_SIZE,
     image_size=IMG_SIZE,
-    validation_split=0.2, # Chia 20% làm tập validation
+    validation_split=0.2,
     subset="training",
     seed=42
 )
@@ -40,46 +36,92 @@ validation_dataset = tf.keras.utils.image_dataset_from_directory(
     seed=42
 )
 
-# Tối ưu hóa pipeline đọc dữ liệu để train nhanh hơn
 AUTOTUNE = tf.data.AUTOTUNE
 train_dataset = train_dataset.cache().prefetch(buffer_size=AUTOTUNE)
 validation_dataset = validation_dataset.cache().prefetch(buffer_size=AUTOTUNE)
 
-print("Load data hoàn tất. Sẵn sàng đưa vào MobileNet!")
-
-# --- 1. Xây dựng Model MobileNetV2 (Alpha=0.5) ---
+# ==========================================
+# 2. XÂY DỰNG MÔ HÌNH (ĐÃ SỬA LỖI)
+# ==========================================
+print("Đang xây dựng MobileNetV2...")
 base_model = tf.keras.applications.MobileNetV2(
     input_shape=(128, 128, 3),
-    alpha=0.5,           # Giảm số lượng channel để siêu nhẹ cho FPGA
+    alpha=0.5,           
     include_top=False, 
     weights='imagenet'
 )
+
+# Đóng băng phần thân để giữ lại các đặc trưng đã học
+base_model.trainable = False
+
 model = tf.keras.Sequential([
+    # CHUẨN HÓA PIXEL: Ép dải [0, 255] về [-1, 1]
+    tf.keras.layers.Rescaling(1./127.5, offset=-1), 
+    
     base_model,
     tf.keras.layers.GlobalAveragePooling2D(),
+    tf.keras.layers.Dropout(0.2), # Chống học vẹt
     tf.keras.layers.Dense(1, activation='sigmoid')
 ])
 
-# --- 2. Training (Tóm tắt) ---
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# ==========================================
+# 3. HUẤN LUYỆN (TRAINING)
+# ==========================================
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001), 
+    loss='binary_crossentropy', 
+    metrics=['accuracy']
+)
+
+print("Bắt đầu Training...")
 model.fit(train_dataset, validation_data=validation_dataset, epochs=10)
 
-# --- 3. Post-Training Quantization sang INT8 ---
+# ==========================================
+# 4. ÉP KIỂU (QUANTIZATION) SANG INT8
+# ==========================================
+print("Bắt đầu lượng tử hóa xuống INT8...")
+
 def representative_data_gen():
-    # Lấy một vài batch từ tập validation để làm mẫu ép kiểu
-    for input_value, _ in validation_dataset.take(20):
-        yield [input_value]
+    for input_value, _ in train_dataset.take(50): 
+        # Ép kiểu float32 để TFLite đọc chuẩn xác
+        yield [tf.cast(input_value, tf.float32)] 
 
 converter = tf.lite.TFLiteConverter.from_keras_model(model)
 converter.optimizations = [tf.lite.Optimize.DEFAULT]
 converter.representative_dataset = representative_data_gen
-# Ép buộc output và input là INT8
+
 converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
 converter.inference_input_type = tf.int8
 converter.inference_output_type = tf.int8
 
 tflite_model_quant = converter.convert()
 
-# Lưu file tflite
-with open('mobilenet_v2_128_quant.tflite', 'wb') as f:
+tflite_path = 'mobilenet_v2_128_quant.tflite'
+with open(tflite_path, 'wb') as f:
     f.write(tflite_model_quant)
+
+# ==========================================
+# 5. XUẤT RA MẢNG C CHO NHÚNG BARE-METAL
+# ==========================================
+print("Đang xuất mảng C-Header...")
+with open(tflite_path, 'rb') as f:
+    tflite_content = f.read()
+
+hex_array = ', '.join([f'0x{byte:02x}' for byte in tflite_content])
+
+c_code = f"""#ifndef MODEL_DATA_H
+#define MODEL_DATA_H
+
+// Kích thước mảng: {len(tflite_content)} bytes
+const unsigned int model_data_len = {len(tflite_content)};
+const unsigned char model_data[] __attribute__((aligned(4))) = {{
+    {hex_array}
+}};
+
+#endif // MODEL_DATA_H
+"""
+
+with open("model_data.h", 'w') as f:
+    f.write(c_code)
+
+print("HOÀN TẤT TOÀN BỘ QUY TRÌNH!")
